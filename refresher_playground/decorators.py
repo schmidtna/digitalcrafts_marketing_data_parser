@@ -44,4 +44,4 @@ def my_function_too(x, y):
 my_function_too(100, 200)
 
 # useful for validation such as user/admin credentials or database entries
-# should have args and kwargs in decorator so you can pass in parameters
+# should have args and kwargs in decorator so you can pass in parameters from passed in function

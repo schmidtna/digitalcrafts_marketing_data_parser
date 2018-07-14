@@ -1,6 +1,6 @@
 from flask_jwt import JWT, jwt_required
 from flask import Flask, request
-from flask_restful import Resource, Api
+from flask_restful import Resource, Api, reqparse
 
 from security import authenticate, identity
 
@@ -14,6 +14,12 @@ items = []
 
 # api works with resources, every resource needs to be a class:
 class Item(Resource):
+    parser = reqparse.RequestParser()
+        parser.add_argument('price',
+            type=float,
+            required=True,
+            help="This field cannot be left blank!"
+        )
     @jwt_required()
     def get(self, name):
         item = next(filter(lambda x: x['name'] == name, items), None)
@@ -22,7 +28,9 @@ class Item(Resource):
     def post(self, name):
         if next(filter(lambda x: x['name'] == name, items), None):
             return {'message': "An item with name '{}' already exists.  ".format(name)}, 400
-        data = request.get_json()
+
+        data = Item.parser.parse_args()
+        
         item = {'name': name, 'price': data['price']}
         items.append(item)
         return item, 201 # 201 is created status
@@ -31,6 +39,19 @@ class Item(Resource):
         global items # without this it iterates over the local items list which is empty
         items = list(filter(lambda x: x['name'] != name, items))
         return {'message': 'Item deleted'}
+
+    def put(self, name):
+        
+        data = Item.parser.parse_args()
+        # filters data payload to not allow anything but price changes in
+        item = next(filter(lambda x: x['name'] == name, items), None)
+        if item is None:
+            item = {'name': name, 'price': data['price']}
+            items.append(item)
+        else:
+            item.update(data)
+        return item
+
 
 class ItemList(Resource):
     def get(self):
